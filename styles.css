@@ -31,6 +31,11 @@ textarea {
   font: inherit;
 }
 
+:focus-visible {
+  outline: 3px solid #1b75bb;
+  outline-offset: 3px;
+}
+
 button,
 .link-button {
   min-height: 40px;
@@ -431,6 +436,16 @@ canvas {
   margin-bottom: 16px;
 }
 
+.download-band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid #bddde2;
+  background: #eef8f9;
+}
+
 .practice-toolbar label:first-child {
   min-width: 250px;
 }
@@ -481,9 +496,19 @@ canvas {
   margin: 0 0 12px;
 }
 
+.hint-text,
 .key-text {
   margin-top: 12px;
   padding: 14px;
+  line-height: 1.55;
+}
+
+.hint-text {
+  border: 1px solid #b9d2dc;
+  background: #eef6f8;
+}
+
+.key-text {
   border: 1px solid #d8c38c;
   background: #fff9ea;
 }
@@ -574,6 +599,17 @@ body.text-first canvas,
 body.text-first .slide-strip,
 body.text-first .slide-browser img {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (max-width: 980px) {

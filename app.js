@@ -136,6 +136,20 @@ function parseSlideSpec(spec) {
 function setupTabs() {
   $$(".tab").forEach(tab => {
     tab.addEventListener("click", () => openTab(tab.dataset.tab));
+    tab.addEventListener("keydown", event => {
+      const tabs = $$(".tab");
+      const index = tabs.indexOf(tab);
+      let nextIndex = index;
+      if (event.key === "ArrowDown" || event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+      if (event.key === "ArrowUp" || event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+      if (event.key === "Home") nextIndex = 0;
+      if (event.key === "End") nextIndex = tabs.length - 1;
+      if (nextIndex !== index) {
+        event.preventDefault();
+        tabs[nextIndex].focus();
+        openTab(tabs[nextIndex].dataset.tab);
+      }
+    });
   });
   $("#toggleTextMode").addEventListener("click", () => {
     const on = document.body.classList.toggle("text-first");
@@ -151,8 +165,17 @@ function setupTabs() {
 }
 
 function openTab(tabId) {
-  $$(".tab").forEach(item => item.classList.toggle("active", item.dataset.tab === tabId));
-  $$(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === tabId));
+  $$(".tab").forEach(item => {
+    const active = item.dataset.tab === tabId;
+    item.classList.toggle("active", active);
+    item.setAttribute("aria-selected", String(active));
+    item.tabIndex = active ? 0 : -1;
+  });
+  $$(".tab-panel").forEach(panel => {
+    const active = panel.id === tabId;
+    panel.classList.toggle("active", active);
+    panel.hidden = !active;
+  });
   setDecision(tabId);
 }
 
@@ -215,9 +238,11 @@ function setupBrowsers() {
   $("#prevSlide").addEventListener("click", () => updateSlide(currentSlide - 1));
   $("#nextSlide").addEventListener("click", () => updateSlide(currentSlide + 1));
   $("#slideNumber").addEventListener("change", event => updateSlide(event.target.value));
+  $("#slideNumber").addEventListener("input", event => updateSlide(event.target.value));
   $("#prevNote").addEventListener("click", () => updateNote(currentNote - 1));
   $("#nextNote").addEventListener("click", () => updateNote(currentNote + 1));
   $("#noteNumber").addEventListener("change", event => updateNote(event.target.value));
+  $("#noteNumber").addEventListener("input", event => updateNote(event.target.value));
   $("#printSlide").addEventListener("click", () => printMode("print-slide"));
   $("#printNote").addEventListener("click", () => printMode("print-note"));
   $("#printPractice").addEventListener("click", () => printMode("print-practice"));
@@ -421,6 +446,7 @@ function calcTwoT() {
   const different = t > crit;
   $("#twoOutput").className = `result-box ${different ? "danger" : "success"}`;
   $("#twoOutput").innerHTML = `<p>F = ${fmt(f, 3)}. Use the F-test first to decide whether pooling is reasonable.</p><p>Pooled SD = ${fmt(sp, 4)}; t calc = <strong>${fmt(t, 3)}</strong>; t critical = ${fmt(crit, 3)} with df = ${df}.</p><p>${different ? "The two means are significantly different." : "The two means are not significantly different at this confidence level."}</p>`;
+  $("#twoTable").innerHTML = `<table class="mini-table"><caption>Accessible data table for the two-mean comparison</caption><thead><tr><th>Group</th><th>Mean</th><th>Standard deviation</th><th>n</th></tr></thead><tbody><tr><td>1</td><td>${fmt(m1, 4)}</td><td>${fmt(s1, 4)}</td><td>${n1}</td></tr><tr><td>2</td><td>${fmt(m2, 4)}</td><td>${fmt(s2, 4)}</td><td>${n2}</td></tr></tbody></table>`;
   drawTwoMeans(m1, s1, m2, s2);
   setDecision(different ? "means differ" : "means similar");
 }
@@ -528,6 +554,7 @@ function calcTail() {
   drawTail(oneTail, t, crit);
   $("#tailOutput").className = `result-box ${significant ? "danger" : "success"}`;
   $("#tailOutput").innerHTML = `<p>${oneTail ? "Use a one-tailed test because the question is directional." : "Use a two-tailed test because the question asks whether the result is different in either direction."}</p><p>t calc = ${fmt(t, 3)}; approximate critical value = ${fmt(crit, 3)}. ${significant ? "Reject the null hypothesis." : "Do not reject the null hypothesis."}</p>`;
+  $("#tailTable").innerHTML = `<table class="mini-table"><caption>Accessible decision table for the tail selector</caption><thead><tr><th>Question type</th><th>Tail choice</th><th>t calculated</th><th>Critical value</th><th>Decision</th></tr></thead><tbody><tr><td>${escapeHtml($("#tailQuestion option:checked").textContent)}</td><td>${oneTail ? "One-tailed" : "Two-tailed"}</td><td>${fmt(t, 3)}</td><td>${fmt(crit, 3)}</td><td>${significant ? "Reject null hypothesis" : "Do not reject null hypothesis"}</td></tr></tbody></table>`;
   setDecision(oneTail ? "one-tailed" : "two-tailed");
 }
 
@@ -590,7 +617,12 @@ function renderPracticeFilters() {
   $("#practiceSearch").addEventListener("input", renderPracticeCards);
   $("#collapseKeys").addEventListener("click", () => {
     $$(".key-text").forEach(key => key.hidden = true);
-    $$(".reveal-key").forEach(button => button.textContent = "Reveal key");
+    $$(".hint-text").forEach(hint => hint.hidden = true);
+    $$(".hint-key").forEach(button => button.textContent = "Hint");
+    $$(".reveal-key").forEach(button => {
+      button.textContent = "Reveal key";
+      button.setAttribute("aria-expanded", "false");
+    });
   });
   renderPracticeCards();
 }
@@ -611,20 +643,41 @@ function renderPracticeCards() {
           <h3>Question ${card.number}</h3>
           <span class="badge">${escapeHtml(card.topic)}</span>
         </div>
-        <button class="ghost reveal-key" type="button" data-key="${card.number}">Reveal key</button>
+        <button class="ghost hint-key" type="button" data-key="${card.number}">Hint</button>
+        <button class="ghost reveal-key" type="button" data-key="${card.number}" aria-controls="key-${card.number}" aria-expanded="false">Reveal key</button>
       </header>
       <p class="question-text">${escapeHtml(card.prompt)}</p>
+      <div class="hint-text" id="hint-${card.number}" hidden>${escapeHtml(makeHint(card))}</div>
       <div class="key-text" id="key-${card.number}" hidden>${escapeHtml(card.key)}</div>
     </article>
   `).join("");
+  $$(".hint-key").forEach(button => {
+    button.addEventListener("click", () => {
+      const hint = $(`#hint-${button.dataset.key}`);
+      hint.hidden = !hint.hidden;
+      button.textContent = hint.hidden ? "Hint" : "Hide hint";
+    });
+  });
   $$(".reveal-key").forEach(button => {
     button.addEventListener("click", () => {
       const key = $(`#key-${button.dataset.key}`);
       key.hidden = !key.hidden;
+      button.setAttribute("aria-expanded", String(!key.hidden));
       button.textContent = key.hidden ? "Reveal key" : "Hide key";
     });
   });
   setDecision(`${filtered.length} cards`);
+}
+
+function makeHint(card) {
+  const text = `${card.prompt} ${card.topic}`.toLowerCase();
+  if (text.includes("confidence") || text.includes("interval")) return "Start with the mean and sample standard deviation, choose the t value from df = N - 1, then calculate t*s/sqrt(N).";
+  if (text.includes("grubbs")) return "Calculate the mean and sample standard deviation using the full data set first, including the suspected value.";
+  if (text.includes("q-test") || text.includes("q test")) return "Sort the values, find the gap between the suspected value and its nearest neighbor, then divide by the full range.";
+  if (text.includes("paired")) return "Pair each sample first, calculate each difference, then run the t-test on the differences.";
+  if (text.includes("f-test") || text.includes("variance")) return "Put the larger variance in the numerator so F is at least 1, then compare against the F table using both degrees of freedom.";
+  if (text.includes("calibration") || text.includes("lod") || text.includes("loq")) return "Identify the slope, intercept, blank mean, and blank standard deviation before converting signal limits to concentration.";
+  return "Identify the lecture topic first, write the known quantities with units, and choose the equation before doing arithmetic.";
 }
 
 function setupExamples() {
@@ -673,6 +726,7 @@ function setupCalculators() {
 
 function init() {
   setupTabs();
+  openTab("reliability");
   renderSlideStrips();
   renderLectureMap();
   setupBrowsers();
