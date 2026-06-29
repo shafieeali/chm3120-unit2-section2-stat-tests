@@ -1,33 +1,23 @@
-# CHM3120 Statistical Tests Interactive Device
+# CHM3120 Statistical Tests Interactive Lab
 
-Interactive browser app for CHM3120 Unit 2 Section 2: Statistical Data Treatment and Evaluation.
+Static interactive app for `CHM3120/Unit2_Section2_StatTests`.
 
-## Built Interactions
+The app follows the lecture progression:
 
-- Dice/sampling simulator for standard deviation reliability.
-- Confidence interval builder using lecture-style t critical values.
-- Student t-test decision lab for known value, two means, and paired differences.
-- F-test precision comparison.
-- Q-test and Grubbs outlier coach.
-- Lecture-aligned practice cards with reveal-key buttons.
-- Lecture progression map.
+1. Reliability of sample standard deviation and confidence intervals
+2. Student t lookup and one-sample t-tests
+3. Independent and paired mean comparisons
+4. F-test, Q-test, and Grubbs outlier decisions
+5. One-tailed versus two-tailed decision coaching
+6. Practice problem cards with per-question reveal keys
+7. Accessible HTML lecture map
 
-## Accessibility Notes
+Student-facing source handling:
 
-- Static HTML/CSS/JS app suitable for GitHub Pages.
-- Semantic headings, labeled controls, keyboard-friendly buttons, and live status messages.
-- Canvas visuals are paired with text summaries and tables.
 - No Word downloads are exposed.
-- PDFs are not exposed as student downloads until accessibility is verified.
+- No PDF downloads are exposed because PDF accessibility was not verified in this run.
+- Lecture content is represented through accessible HTML summaries and interaction-specific guidance.
+- Canvas charts include text summaries.
+- Practice problems from the statistical-test subset are converted into individual HTML cards with separate reveal-key buttons.
 
-## Source Materials
-
-Primary source files remain in the parent section folder:
-
-- `CHM3120_Unit2_Section2__Statistic Tests 2.pptx`
-- `CHM3120_Unit2_Section2__Statistic Tests.pdf`
-- `ClassNote_CHM3120_Unit2_Section2__Statistic Tests 2.pdf`
-- `T-value.pdf`
-- `F-Distribution-Table.pdf`
-
-Review draft created from lecture progression on 2026-06-29.
+Open `index.html` directly in a browser or publish the folder with GitHub Pages.

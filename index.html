@@ -14,6 +14,8 @@
         <h1>Statistical Data Treatment Interactive Device</h1>
       </div>
       <div class="top-actions">
+        <button class="ghost" id="openAccessibilityGuide" type="button">Accessibility guide</button>
+        <button class="ghost" id="toggleTranscripts" type="button" aria-pressed="true">Hide transcripts</button>
         <button class="ghost" id="toggleTextMode" type="button" aria-pressed="false">Text-first mode</button>
         <div class="meter-card" aria-live="polite">
           <span>current decision</span>
@@ -22,79 +24,111 @@
       </div>
     </header>
 
+    <section class="accessibility-guide panel" id="accessibilityGuide" hidden>
+      <div class="panel-heading compact">
+        <div>
+          <p class="eyebrow">Accessibility support</p>
+          <h2>How to Use This Interactive App Accessibly</h2>
+        </div>
+        <button class="ghost" id="closeAccessibilityGuide" type="button">Close guide</button>
+      </div>
+      <div class="two-col">
+        <div>
+          <h3>Navigation</h3>
+          <p>The left navigation opens each lecture section, the practice lab, the full slide studio, and the class-note browser. The skip link moves keyboard users directly to the main workspace.</p>
+          <h3>Slides and Notes</h3>
+          <p>Slide and note images are paired with extracted text transcripts. The browser controls include previous, next, and print actions.</p>
+        </div>
+        <div>
+          <h3>Interactive Work</h3>
+          <p>Calculators and decision coaches provide live feedback. Practice answers are hidden until students press the reveal button for each individual card.</p>
+          <h3>Text-first Mode</h3>
+          <p>Text-first mode hides visual-heavy panels and keeps the transcripts, calculations, feedback, and practice cards available.</p>
+        </div>
+      </div>
+    </section>
+
     <main class="app-shell" id="mainContent">
       <aside class="rail" aria-label="Lecture sections" role="tablist" aria-orientation="vertical">
-        <button class="tab active" data-tab="sampling">1. Sampling + SD</button>
-        <button class="tab" data-tab="confidence">2. Confidence Intervals</button>
-        <button class="tab" data-tab="ttests">3. Student t Tests</button>
-        <button class="tab" data-tab="variance">4. F Test + Outliers</button>
-        <button class="tab" data-tab="practice">Practice Cards</button>
-        <button class="tab" data-tab="slides">Lecture Map</button>
+        <button class="tab active" id="tab-reliability" role="tab" aria-selected="true" aria-controls="reliability" data-tab="reliability">1. SD + Confidence</button>
+        <button class="tab" id="tab-oneSample" role="tab" aria-selected="false" aria-controls="oneSample" data-tab="oneSample">2. One-Sample t</button>
+        <button class="tab" id="tab-twoMeans" role="tab" aria-selected="false" aria-controls="twoMeans" data-tab="twoMeans">3. Two Means</button>
+        <button class="tab" id="tab-paired" role="tab" aria-selected="false" aria-controls="paired" data-tab="paired">4. Paired t</button>
+        <button class="tab" id="tab-variance" role="tab" aria-selected="false" aria-controls="variance" data-tab="variance">5. F + Outliers</button>
+        <button class="tab" id="tab-tails" role="tab" aria-selected="false" aria-controls="tails" data-tab="tails">6. One vs Two Tails</button>
+        <button class="tab" id="tab-practice" role="tab" aria-selected="false" aria-controls="practice" data-tab="practice">Practice Lab</button>
+        <button class="tab" id="tab-slides" role="tab" aria-selected="false" aria-controls="slides" data-tab="slides">Slide Studio</button>
+        <button class="tab" id="tab-notes" role="tab" aria-selected="false" aria-controls="notes" data-tab="notes">Class Notes</button>
       </aside>
 
       <section class="workspace">
-        <section class="panel tab-panel active" id="sampling">
+        <section class="panel tab-panel active" id="reliability" role="tabpanel" aria-labelledby="tab-reliability">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Slides 2-5</p>
-              <h2>Why Standard Deviation Needs Statistics</h2>
+              <p class="eyebrow">Slides 2-9</p>
+              <h2>Reliability of SD and Confidence Intervals</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" data-open-slides="2-9" type="button">Open lecture slides</button>
+              <button class="ghost" data-open-notes="2-9" type="button">Open class notes</button>
             </div>
           </div>
-          <p class="section-instructions">Roll many simulated measurements and watch how mean, standard deviation, and confidence change as the sample size grows. This mirrors the lecture question: how reliable is SD in practice?</p>
+          <p class="section-instructions">This section follows the lecture path from reliability of standard deviation to confidence limits and the caffeine label-claim example. Students can simulate repeated data sets, then build t-based confidence intervals from actual measurements.</p>
+          <div class="download-band" aria-label="Approved lecture materials">
+            <a class="ghost link-button" href="assets/CHM3120_Unit2_Section2_Statistical_Tests_accessible_slides.pdf" download>Download accessible lecture PDF</a>
+            <a class="ghost link-button" href="assets/CHM3120_Unit2_Section2_Statistical_Tests_class_notes.pdf" download>Download class-note PDF</a>
+            <a class="ghost link-button" href="assets/tables/T-value.pdf" download>Download T-value table</a>
+            <a class="ghost link-button" href="assets/tables/F-Distribution-Table.pdf" download>Download F table</a>
+          </div>
           <div class="two-col wide-left">
             <div class="tool">
-              <h3>Dice Sampling Game</h3>
-              <label>Population size
-                <select id="populationSize">
-                  <option value="100">1-100</option>
-                  <option value="1000">1-1,000</option>
-                  <option value="100000" selected>1-100,000</option>
+              <h3>Sampling Reliability Game</h3>
+              <label>True value
+                <input id="trueMean" type="number" step="0.1" value="100.0">
+              </label>
+              <label>True population SD
+                <input id="trueSd" type="number" step="0.1" min="0.1" value="5.0">
+              </label>
+              <label>Replicates in each experiment
+                <input id="sampleSize" type="number" min="2" max="50" value="5">
+              </label>
+              <label>Number of experiments
+                <select id="experimentCount">
+                  <option value="1">1</option>
+                  <option value="10">10</option>
+                  <option value="100" selected>100</option>
+                  <option value="1000">1000</option>
                 </select>
               </label>
-              <label>Sample size n
-                <input id="sampleSize" type="number" min="3" max="1000" value="5">
-              </label>
-              <label>Measurement noise (% of range)
-                <input id="noisePercent" type="range" min="0" max="20" value="5">
-              </label>
               <div class="button-row">
-                <button class="primary" id="rollOnce" type="button">Roll sample</button>
-                <button class="ghost" id="rollMany" type="button">Roll 100 times</button>
+                <button class="primary" id="runSampling" type="button">Run simulation</button>
+                <button class="ghost" id="clearSampling" type="button">Clear</button>
               </div>
               <div class="result-box" id="sampleStats" aria-live="polite"></div>
             </div>
             <div class="tool">
-              <h3>Distribution View</h3>
-              <canvas id="samplingCanvas" width="720" height="320" role="img" aria-label="Histogram of simulated sample means"></canvas>
-              <p class="chart-summary" id="samplingSummary">Run the sampling game to generate a text summary and histogram data.</p>
+              <h3>Distribution of Sample Means</h3>
+              <canvas id="samplingCanvas" width="760" height="320" role="img" aria-label="Histogram of simulated sample means" aria-describedby="samplingSummary samplingCaption"></canvas>
+              <p class="chart-summary" id="samplingSummary">Run the simulation to see how finite replicate sets scatter around the population mean.</p>
               <div class="table-wrap">
                 <table class="mini-table" id="samplingTable">
-                  <caption>Recent sample statistics</caption>
-                  <thead><tr><th>Run</th><th>Mean</th><th>SD</th><th>RSD %</th></tr></thead>
+                  <caption id="samplingCaption">Accessible data table for the most recent simulation experiments</caption>
+                  <thead><tr><th>Run</th><th>Mean</th><th>s</th><th>95% CL</th></tr></thead>
                   <tbody></tbody>
                 </table>
               </div>
             </div>
           </div>
-        </section>
-
-        <section class="panel tab-panel" id="confidence">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">Slides 3-9</p>
-              <h2>Confidence Interval Builder</h2>
-            </div>
-          </div>
-          <p class="section-instructions">Enter replicate measurements, choose confidence level, and see the confidence interval form around the mean.</p>
           <div class="two-col">
             <div class="tool">
-              <h3>Data Input</h3>
+              <h3>Confidence Interval Builder</h3>
               <label>Measurements, comma separated
                 <textarea id="ciData" rows="4">6.375, 6.372, 6.374, 6.377, 6.375</textarea>
               </label>
               <label>Confidence level
                 <select id="ciLevel">
                   <option value="50">50%</option>
+                  <option value="80">80%</option>
                   <option value="90">90%</option>
                   <option value="95" selected>95%</option>
                   <option value="99">99%</option>
@@ -103,113 +137,307 @@
               <button class="primary" id="calcCi" type="button">Build interval</button>
             </div>
             <div class="tool">
-              <h3>Interval Decision</h3>
+              <h3>Interval Feedback</h3>
               <div id="ciOutput" class="result-box" aria-live="polite"></div>
-              <canvas id="ciCanvas" width="720" height="220" role="img" aria-label="Confidence interval number line"></canvas>
-              <p class="chart-summary" id="ciSummary">Confidence interval summary appears after calculation.</p>
+              <canvas id="ciCanvas" width="760" height="220" role="img" aria-label="Confidence interval number line" aria-describedby="ciOutput ciSummary"></canvas>
+              <p class="chart-summary" id="ciSummary">The confidence interval appears after calculation.</p>
             </div>
           </div>
+          <div class="slide-strip" data-slides="2,3,4,5,7,8,9"></div>
         </section>
 
-        <section class="panel tab-panel" id="ttests">
+        <section class="panel tab-panel" id="oneSample" role="tabpanel" aria-labelledby="tab-oneSample" hidden>
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Slides 10-25 and 40-41</p>
-              <h2>Student t-Test Decision Lab</h2>
+              <p class="eyebrow">Slides 8, 10-15</p>
+              <h2>Compare a Mean with an Accepted Value</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" data-open-slides="8,10-15" type="button">Open lecture slides</button>
+              <button class="ghost" data-load-example="caffeine" type="button">Load caffeine example</button>
             </div>
           </div>
-          <p class="section-instructions">Choose the lecture case, enter values, and compare t calculated with t critical. The output tells students which equation pathway they used.</p>
-          <div class="two-col wide-left">
+          <p class="section-instructions">Use this tab for the classic question: is the experimental mean significantly different from a known or claimed value?</p>
+          <div class="two-col">
             <div class="tool">
-              <h3>Choose Test Case</h3>
-              <label>Case
-                <select id="tCase">
-                  <option value="known">Case 1: experimental mean vs known value</option>
-                  <option value="two">Case 2: two experimental means</option>
-                  <option value="paired">Case 3: paired differences</option>
+              <h3>One-Sample t Test</h3>
+              <label>Experimental data
+                <textarea id="oneData" rows="4">98.5, 100.1, 99.7, 101.0, 99.9</textarea>
+              </label>
+              <label>Known or claimed value
+                <input id="knownValue" type="number" step="0.001" value="100.0">
+              </label>
+              <label>Confidence level
+                <select id="oneLevel">
+                  <option value="90">90%</option>
+                  <option value="95" selected>95%</option>
+                  <option value="99">99%</option>
                 </select>
               </label>
-              <div id="tInputs"></div>
-              <button class="primary" id="calcT" type="button">Evaluate t test</button>
+              <button class="primary" id="calcOneT" type="button">Evaluate claim</button>
             </div>
             <div class="tool">
-              <h3>t-Test Feedback</h3>
-              <div id="tOutput" class="result-box" aria-live="polite"></div>
-              <div id="tSteps" class="step-coach"></div>
+              <h3>Decision Coach</h3>
+              <div id="oneOutput" class="result-box" aria-live="polite"></div>
+              <div class="step-coach" id="oneSteps"></div>
             </div>
           </div>
+          <div class="tool">
+            <h3>Student Check</h3>
+            <p>Before revealing the decision, choose the correct interpretation.</p>
+            <div class="choice-grid">
+              <button class="check-btn" data-check="oneSample" data-answer="different" type="button">The result is significantly different</button>
+              <button class="check-btn" data-check="oneSample" data-answer="consistent" type="button">The result is statistically consistent</button>
+            </div>
+            <div class="result-box" id="oneCheckFeedback" aria-live="polite"></div>
+          </div>
+          <div class="slide-strip" data-slides="8,10,11,12,13,14,15"></div>
         </section>
 
-        <section class="panel tab-panel" id="variance">
+        <section class="panel tab-panel" id="twoMeans" role="tabpanel" aria-labelledby="tab-twoMeans" hidden>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Slides 16-20 and 26-29</p>
+              <h2>Compare Two Experimental Means</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" data-open-slides="16-20,26-29" type="button">Open lecture slides</button>
+              <button class="ghost" data-load-example="twoMeans" type="button">Load lecture-style data</button>
+            </div>
+          </div>
+          <p class="section-instructions">Students first check the variances with an F-test, then decide whether the pooled t-test is appropriate for comparing two means.</p>
+          <div class="two-col wide-left">
+            <div class="tool">
+              <h3>Two-Mean t Test</h3>
+              <div class="input-grid">
+                <label>Mean 1<input id="mean1" type="number" step="0.001" value="36.14"></label>
+                <label>SD 1<input id="s1" type="number" step="0.001" value="0.28"></label>
+                <label>n 1<input id="n1" type="number" min="2" value="10"></label>
+                <label>Mean 2<input id="mean2" type="number" step="0.001" value="36.20"></label>
+                <label>SD 2<input id="s2" type="number" step="0.001" value="0.47"></label>
+                <label>n 2<input id="n2" type="number" min="2" value="4"></label>
+              </div>
+              <label>Confidence level
+                <select id="twoLevel">
+                  <option value="90">90%</option>
+                  <option value="95" selected>95%</option>
+                  <option value="99">99%</option>
+                </select>
+              </label>
+              <button class="primary" id="calcTwoT" type="button">Run F-test and t-test</button>
+            </div>
+            <div class="tool">
+              <h3>Combined Decision</h3>
+              <div id="twoOutput" class="result-box" aria-live="polite"></div>
+              <canvas id="twoCanvas" width="760" height="260" role="img" aria-label="Two distributions compared by their means and standard deviations" aria-describedby="twoOutput twoSummary twoTable"></canvas>
+              <p class="chart-summary" id="twoSummary">The comparison plot appears after calculation.</p>
+              <div class="table-wrap" id="twoTable"></div>
+            </div>
+          </div>
+          <div class="slide-strip" data-slides="16,17,18,19,20,26,27,28,29"></div>
+        </section>
+
+        <section class="panel tab-panel" id="paired" role="tabpanel" aria-labelledby="tab-paired" hidden>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Slides 21-25 and 30-33</p>
+              <h2>Paired Measurements</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" data-open-slides="21-25,30-33" type="button">Open lecture slides</button>
+              <button class="ghost" data-load-example="paired" type="button">Load patient-method example</button>
+            </div>
+          </div>
+          <p class="section-instructions">Paired tests preserve the relationship between two measurements made on the same sample, patient, bottle, or trial.</p>
+          <div class="two-col">
+            <div class="tool">
+              <h3>Paired t-Test Lab</h3>
+              <label>Method A / reference
+                <textarea id="pairedA" rows="4">95.2, 108.5, 122.3, 87.6, 134.2, 101.7, 115.8</textarea>
+              </label>
+              <label>Method B / new method
+                <textarea id="pairedB" rows="4">96.1, 109.8, 123.1, 88.9, 135.5, 102.3, 116.4</textarea>
+              </label>
+              <label>Confidence level
+                <select id="pairedLevel">
+                  <option value="90">90%</option>
+                  <option value="95" selected>95%</option>
+                  <option value="99">99%</option>
+                </select>
+              </label>
+              <button class="primary" id="calcPaired" type="button">Analyze paired differences</button>
+            </div>
+            <div class="tool">
+              <h3>Difference Table</h3>
+              <div id="pairedOutput" class="result-box" aria-live="polite"></div>
+              <div class="table-wrap" id="pairedTable"></div>
+            </div>
+          </div>
+          <div class="slide-strip" data-slides="21,22,23,24,25,30,31,32,33"></div>
+        </section>
+
+        <section class="panel tab-panel" id="variance" role="tabpanel" aria-labelledby="tab-variance" hidden>
           <div class="panel-heading">
             <div>
               <p class="eyebrow">Slides 26-39</p>
-              <h2>F Test, Q Test, and Grubbs Outlier Coach</h2>
+              <h2>F Test, Q Test, and Grubbs Outlier Test</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" data-open-slides="26-39" type="button">Open lecture slides</button>
+              <button class="ghost" data-load-example="outlier" type="button">Load outlier example</button>
             </div>
           </div>
+          <p class="section-instructions">This section turns the lecture’s precision comparison and outlier tests into guided workflows. Students must decide whether the suspected point is low or high before revealing the result.</p>
           <div class="two-col">
             <div class="tool">
-              <h3>F Test for Precision</h3>
-              <label>Standard deviation A
-                <input id="sdA" type="number" step="0.001" value="0.28">
-              </label>
-              <label>n for A
-                <input id="nA" type="number" min="2" value="10">
-              </label>
-              <label>Standard deviation B
-                <input id="sdB" type="number" step="0.001" value="0.47">
-              </label>
-              <label>n for B
-                <input id="nB" type="number" min="2" value="4">
-              </label>
+              <h3>F-Test for Precision</h3>
+              <div class="input-grid">
+                <label>SD A<input id="fSda" type="number" step="0.001" value="0.28"></label>
+                <label>n A<input id="fNa" type="number" min="2" value="10"></label>
+                <label>SD B<input id="fSdb" type="number" step="0.001" value="0.47"></label>
+                <label>n B<input id="fNb" type="number" min="2" value="4"></label>
+              </div>
               <button class="primary" id="calcF" type="button">Compare variances</button>
               <div id="fOutput" class="result-box" aria-live="polite"></div>
             </div>
             <div class="tool">
-              <h3>Outlier Tests</h3>
+              <h3>Q and Grubbs Coach</h3>
               <label>Data set
                 <textarea id="outlierData" rows="4">2.31017, 2.30986, 2.31010, 2.31001, 2.31024, 2.31010, 2.31028, 2.29889</textarea>
               </label>
-              <label>Suspected outlier
+              <label>Suspected value
                 <select id="outlierSide">
                   <option value="low">lowest value</option>
                   <option value="high">highest value</option>
                 </select>
               </label>
-              <button class="primary" id="calcOutlier" type="button">Run Q and Grubbs checks</button>
+              <button class="primary" id="calcOutlier" type="button">Run outlier tests</button>
               <div id="outlierOutput" class="result-box" aria-live="polite"></div>
             </div>
           </div>
+          <div class="slide-strip" data-slides="26,27,28,29,34,35,36,37,38,39"></div>
         </section>
 
-        <section class="panel tab-panel" id="practice">
+        <section class="panel tab-panel" id="tails" role="tabpanel" aria-labelledby="tab-tails" hidden>
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Lecture-aligned practice</p>
-              <h2>Practice Cards</h2>
+              <p class="eyebrow">Slides 40-41</p>
+              <h2>One-Tailed vs Two-Tailed Decisions</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" data-open-slides="40-41" type="button">Open lecture slides</button>
             </div>
           </div>
-          <p class="section-instructions">Each card asks students to choose the statistical pathway before revealing the key.</p>
+          <p class="section-instructions">Use this decision builder when the research question is directional, such as greater than a safety limit, versus non-directional, such as different from a claimed value.</p>
+          <div class="two-col">
+            <div class="tool">
+              <h3>Tail Selector</h3>
+              <label>Scientific question
+                <select id="tailQuestion">
+                  <option value="different">Is the result different from the claim?</option>
+                  <option value="greater">Is the result greater than the limit?</option>
+                  <option value="less">Is the result less than the target?</option>
+                </select>
+              </label>
+              <label>t calculated
+                <input id="tailT" type="number" step="0.01" value="2.40">
+              </label>
+              <label>Degrees of freedom
+                <input id="tailDf" type="number" min="1" value="5">
+              </label>
+              <button class="primary" id="calcTail" type="button">Choose decision pathway</button>
+            </div>
+            <div class="tool">
+              <h3>Decision Region</h3>
+              <canvas id="tailCanvas" width="760" height="280" role="img" aria-label="One-tailed and two-tailed t decision regions" aria-describedby="tailOutput tailTable"></canvas>
+              <div id="tailOutput" class="result-box" aria-live="polite"></div>
+              <div class="table-wrap" id="tailTable"></div>
+            </div>
+          </div>
+          <div class="slide-strip" data-slides="40,41"></div>
+        </section>
+
+        <section class="panel tab-panel" id="practice" role="tabpanel" aria-labelledby="tab-practice" hidden>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Practice Problem Set 1</p>
+              <h2>Organized Practice Cards</h2>
+            </div>
+            <div class="button-row">
+              <button class="ghost" id="collapseKeys" type="button">Hide all keys</button>
+              <button class="ghost" id="printPractice" type="button">Print practice view</button>
+            </div>
+          </div>
+          <p class="section-instructions">Each question from the practice set appears in its own card. Students see the question first, try the work, then reveal that question’s key only when ready.</p>
+          <div class="practice-toolbar">
+            <label>Topic
+              <select id="practiceTopic"></select>
+            </label>
+            <label>Search
+              <input id="practiceSearch" type="search" placeholder="mean, Grubbs, calibration...">
+            </label>
+          </div>
           <div class="provided-question-list" id="practiceCards"></div>
         </section>
 
-        <section class="panel tab-panel" id="slides">
+        <section class="panel tab-panel" id="slides" role="tabpanel" aria-labelledby="tab-slides" hidden>
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">41-slide lecture map</p>
-              <h2>Lecture Progression</h2>
+              <p class="eyebrow">41-slide lecture browser</p>
+              <h2>Slide Studio</h2>
+            </div>
+            <div class="button-row">
+              <a class="ghost link-button" href="assets/CHM3120_Unit2_Section2_Statistical_Tests_accessible_slides.pdf" download>Download original accessible PDF</a>
+              <button class="ghost" id="printSlide" type="button">Print current slide</button>
             </div>
           </div>
+          <div class="slide-browser">
+            <div class="slide-controls">
+              <button class="ghost" id="prevSlide" type="button">Previous</button>
+              <label>Slide
+                <input id="slideNumber" type="number" min="1" max="41" value="1">
+              </label>
+              <button class="ghost" id="nextSlide" type="button">Next</button>
+            </div>
+            <img id="mainSlideImage" src="assets/slides/slide-01.png" alt="Lecture slide 1">
+            <article class="transcript-panel" id="mainSlideTranscript"></article>
+          </div>
           <div class="lecture-map" id="lectureMap"></div>
+        </section>
+
+        <section class="panel tab-panel" id="notes" role="tabpanel" aria-labelledby="tab-notes" hidden>
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Class-note browser</p>
+              <h2>Lecture Notes, Page by Page</h2>
+            </div>
+            <div class="button-row">
+              <a class="ghost link-button" href="assets/CHM3120_Unit2_Section2_Statistical_Tests_class_notes.pdf" download>Download original class-note PDF</a>
+              <button class="ghost" id="printNote" type="button">Print current note page</button>
+            </div>
+          </div>
+          <div class="slide-browser note-browser">
+            <div class="slide-controls">
+              <button class="ghost" id="prevNote" type="button">Previous</button>
+              <label>Page
+                <input id="noteNumber" type="number" min="1" max="41" value="1">
+              </label>
+              <button class="ghost" id="nextNote" type="button">Next</button>
+            </div>
+            <img id="mainNoteImage" src="assets/classnotes/page-01.png" alt="Class note page 1">
+            <article class="transcript-panel" id="mainNoteTranscript"></article>
+          </div>
         </section>
       </section>
     </main>
 
     <footer>
-      <p>Primary source: CHM3120 Unit 2 Section 2 Statistical Tests lecture materials by Dr. Ali Shafiee. This app is a review draft generated from the lecture progression and should be instructor-reviewed before broad student release.</p>
+      <p>Primary sources: CHM3120 Unit 2 Section 2 Statistical Data Treatment lecture slides, class notes, T-value table, F-distribution table, and Practice Problem Set 1 by Dr. Ali Shafiee.</p>
     </footer>
 
     <div id="srStatus" class="sr-only" aria-live="polite"></div>
+    <script src="slide-transcripts.js"></script>
+    <script src="assets/practice/practice-set-1.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

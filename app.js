@@ -1,89 +1,74 @@
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
 
+const SLIDE_COUNT = 41;
+let currentSlide = 1;
+let currentNote = 1;
+let samplingRuns = [];
+let lastOneSampleDecision = null;
+
 const tCritical = {
-  1: { 50: 1.000, 90: 6.314, 95: 12.710, 99: 63.660 },
-  2: { 50: 0.816, 90: 2.920, 95: 4.303, 99: 9.925 },
-  3: { 50: 0.765, 90: 2.353, 95: 3.182, 99: 5.841 },
-  4: { 50: 0.741, 90: 2.132, 95: 2.776, 99: 4.604 },
-  5: { 50: 0.727, 90: 2.015, 95: 2.571, 99: 4.032 },
-  6: { 50: 0.718, 90: 1.943, 95: 2.447, 99: 3.707 },
-  7: { 50: 0.711, 90: 1.895, 95: 2.365, 99: 3.499 },
-  8: { 50: 0.706, 90: 1.860, 95: 2.306, 99: 3.355 },
-  9: { 50: 0.703, 90: 1.833, 95: 2.262, 99: 3.250 },
-  10: { 50: 0.700, 90: 1.812, 95: 2.228, 99: 3.169 },
-  11: { 50: 0.697, 90: 1.796, 95: 2.201, 99: 3.106 },
-  12: { 50: 0.695, 90: 1.782, 95: 2.179, 99: 3.055 },
-  15: { 50: 0.691, 90: 1.753, 95: 2.131, 99: 2.947 },
-  20: { 50: 0.687, 90: 1.725, 95: 2.086, 99: 2.845 },
-  25: { 50: 0.684, 90: 1.708, 95: 2.060, 99: 2.787 },
-  60: { 50: 0.679, 90: 1.671, 95: 2.000, 99: 2.660 }
+  1: { 50: 1.000, 80: 3.078, 90: 6.314, 95: 12.710, 99: 63.660 },
+  2: { 50: 0.816, 80: 1.886, 90: 2.920, 95: 4.303, 99: 9.925 },
+  3: { 50: 0.765, 80: 1.638, 90: 2.353, 95: 3.182, 99: 5.841 },
+  4: { 50: 0.741, 80: 1.533, 90: 2.132, 95: 2.776, 99: 4.604 },
+  5: { 50: 0.727, 80: 1.476, 90: 2.015, 95: 2.571, 99: 4.032 },
+  6: { 50: 0.718, 80: 1.440, 90: 1.943, 95: 2.447, 99: 3.707 },
+  7: { 50: 0.711, 80: 1.415, 90: 1.895, 95: 2.365, 99: 3.499 },
+  8: { 50: 0.706, 80: 1.397, 90: 1.860, 95: 2.306, 99: 3.355 },
+  9: { 50: 0.703, 80: 1.383, 90: 1.833, 95: 2.262, 99: 3.250 },
+  10: { 50: 0.700, 80: 1.372, 90: 1.812, 95: 2.228, 99: 3.169 },
+  11: { 50: 0.697, 80: 1.363, 90: 1.796, 95: 2.201, 99: 3.106 },
+  12: { 50: 0.695, 80: 1.356, 90: 1.782, 95: 2.179, 99: 3.055 },
+  13: { 50: 0.694, 80: 1.350, 90: 1.771, 95: 2.160, 99: 3.012 },
+  14: { 50: 0.692, 80: 1.345, 90: 1.761, 95: 2.145, 99: 2.977 },
+  15: { 50: 0.691, 80: 1.341, 90: 1.753, 95: 2.131, 99: 2.947 },
+  20: { 50: 0.687, 80: 1.325, 90: 1.725, 95: 2.086, 99: 2.845 },
+  25: { 50: 0.684, 80: 1.316, 90: 1.708, 95: 2.060, 99: 2.787 },
+  60: { 50: 0.679, 80: 1.296, 90: 1.671, 95: 2.000, 99: 2.660 },
+  1000: { 50: 0.675, 80: 1.282, 90: 1.646, 95: 1.962, 99: 2.581 }
 };
 
-const fCritical95 = {
-  "9,3": 8.85,
-  "3,9": 3.86,
-  "12,999": 1.75,
-  "999,12": 2.30,
-  "4,4": 6.39,
-  "5,5": 5.05,
-  "10,10": 2.98
+const qCritical95 = {
+  3: 0.970, 4: 0.829, 5: 0.710, 6: 0.625, 7: 0.568, 8: 0.526, 9: 0.493, 10: 0.466
 };
 
-const qCritical95 = { 3: 0.970, 4: 0.829, 5: 0.710, 6: 0.625, 7: 0.568, 8: 0.526, 9: 0.493, 10: 0.466 };
-const grubbsCritical95 = { 3: 1.153, 4: 1.463, 5: 1.672, 6: 1.822, 7: 1.938, 8: 2.032, 9: 2.110, 10: 2.176, 11: 2.234, 12: 2.285, 15: 2.409, 20: 2.557, 30: 2.745, 50: 2.956 };
+const grubbsCritical95 = {
+  3: 1.153, 4: 1.463, 5: 1.672, 6: 1.822, 7: 1.938, 8: 2.032, 9: 2.110, 10: 2.176,
+  11: 2.234, 12: 2.285, 15: 2.409, 20: 2.557, 30: 2.745, 50: 2.956
+};
 
 const lectureCards = [
-  ["Slides 2-5", "Reliability of standard deviation, confidence intervals, and why finite replicate sets need statistical tests."],
-  ["Slides 7-9", "t critical vs t calculated, caffeine label claim, and confidence interval practice."],
-  ["Slides 10-15", "Comparison of a measured mean with a known accepted value."],
-  ["Slides 16-20", "Comparison of two experimental means using pooled standard deviation."],
-  ["Slides 21-25", "Paired measurements and individual differences."],
-  ["Slides 26-29", "F-test for comparing precision and variance."],
-  ["Slides 30-33", "iClicker conceptual checks on paired tests and F-test assumptions."],
-  ["Slides 34-36", "Rayleigh nitrogen measurements and the statistics behind argon discovery."],
-  ["Slides 37-39", "Q-test and Grubbs test for suspected outliers."],
-  ["Slides 40-41", "One-tailed vs two-tailed significance tests."]
+  { range: "2-5", title: "Reliability and confidence intervals", detail: "Why a finite number of replicates requires statistical treatment, and how x-bar +/- ts/sqrt(N) is built." },
+  { range: "7-9", title: "t critical and first practice", detail: "Use the t table, caffeine label claim, and carbohydrate confidence interval examples." },
+  { range: "10-15", title: "Mean versus accepted value", detail: "Decide whether one experimental mean differs from a known value." },
+  { range: "16-20", title: "Two experimental means", detail: "Compare two means after checking the assumptions behind pooled standard deviation." },
+  { range: "21-25", title: "Paired measurements", detail: "Use differences within matched samples instead of treating the data as unrelated." },
+  { range: "26-29", title: "F-test for precision", detail: "Compare variances before deciding whether two methods have comparable precision." },
+  { range: "30-33", title: "Concept checks", detail: "Lecture clicker-style questions about paired tests and F-test choices." },
+  { range: "34-36", title: "Rayleigh nitrogen story", detail: "A historical example of statistical difference leading to chemical discovery." },
+  { range: "37-39", title: "Q and Grubbs outliers", detail: "Test suspicious data points before rejecting them." },
+  { range: "40-41", title: "One-tail and two-tail tests", detail: "Match the statistical test to the scientific question." }
 ];
-
-const practiceCards = [
-  {
-    section: "Confidence interval",
-    prompt: "Five caffeine measurements are 98.5, 100.1, 99.7, 101.0, and 99.9 mg. Does the 95% confidence interval support a 100.0 mg label claim?",
-    key: "Mean = 99.84 mg and s = 0.90 mg. With df = 4, t95 = 2.776. The interval contains 100.0 mg, so the claim is statistically supported at 95%."
-  },
-  {
-    section: "One-sample t",
-    prompt: "A NIST coal standard is 3.19 wt% sulfur. A new method gives 3.29, 3.22, 3.30, and 3.23 wt%. Which test pathway fits?",
-    key: "Case 1: experimental mean vs known value. Compare the mean and 95% confidence interval, or calculate t = |xbar - mu| sqrt(n) / s."
-  },
-  {
-    section: "Two means",
-    prompt: "Original instrument: mean 36.14, s = 0.28, n = 10. New instrument: mean 36.20, s = 0.47, n = 4. What should be checked before pooling?",
-    key: "Use an F-test first because pooling assumes similar variances. F = 0.47^2 / 0.28^2 = 2.82."
-  },
-  {
-    section: "Paired t",
-    prompt: "A biosensor reads +5 mg/dL higher than a reference method for every patient. Why is a paired t-test more sensitive than an unpaired t-test?",
-    key: "The paired test analyzes within-patient differences. Patient-to-patient variability cancels, so the systematic +5 bias becomes visible."
-  },
-  {
-    section: "Outlier",
-    prompt: "A data set contains one value far from the rest. Why must s be calculated before removing the suspected value in Grubbs test?",
-    key: "Grubbs uses the full data set, including the suspected value, to calculate mean and standard deviation. Remove a point only after the test justifies it."
-  }
-];
-
-let samplingRuns = [];
 
 function fmt(value, digits = 3) {
   if (!Number.isFinite(value)) return "not available";
-  if (Math.abs(value) >= 1000 || Math.abs(value) < 0.01 && value !== 0) return value.toExponential(2);
-  return value.toFixed(digits);
+  if (Math.abs(value) >= 10000 || (Math.abs(value) < 0.001 && value !== 0)) return value.toExponential(2);
+  return value.toFixed(digits).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[char]));
 }
 
 function numbersFrom(text) {
-  return text.split(/[\s,;]+/).map(Number).filter(Number.isFinite);
+  return text.split(/[\s,;]+/).map(value => Number(value)).filter(Number.isFinite);
 }
 
 function mean(values) {
@@ -97,14 +82,22 @@ function sd(values) {
   return Math.sqrt(variance);
 }
 
-function nearestDf(df) {
-  const keys = Object.keys(tCritical).map(Number).sort((a, b) => a - b);
-  return keys.reduce((best, key) => Math.abs(key - df) < Math.abs(best - df) ? key : best, keys[0]);
+function nearestKey(table, value) {
+  const keys = Object.keys(table).map(Number).sort((a, b) => a - b);
+  return keys.reduce((best, key) => Math.abs(key - value) < Math.abs(best - value) ? key : best, keys[0]);
 }
 
 function tCrit(df, level) {
-  const key = nearestDf(df);
+  const key = nearestKey(tCritical, df);
   return tCritical[key][level] || tCritical[key][95];
+}
+
+function qCrit(n) {
+  return qCritical95[nearestKey(qCritical95, n)];
+}
+
+function grubbsCrit(n) {
+  return grubbsCritical95[nearestKey(grubbsCritical95, n)];
 }
 
 function setDecision(text) {
@@ -112,78 +105,231 @@ function setDecision(text) {
   $("#srStatus").textContent = text;
 }
 
+function slideSrc(n) {
+  return `assets/slides/slide-${String(n).padStart(2, "0")}.png`;
+}
+
+function noteSrc(n) {
+  return `assets/classnotes/page-${String(n).padStart(2, "0")}.png`;
+}
+
+function transcript(n) {
+  return (window.slideTranscripts || []).find(item => item.number === n) || {
+    number: n,
+    title: `Slide ${n}`,
+    text: "Transcript unavailable."
+  };
+}
+
+function parseSlideSpec(spec) {
+  return String(spec).split(",").flatMap(part => {
+    const trimmed = part.trim();
+    if (!trimmed) return [];
+    if (trimmed.includes("-")) {
+      const [a, b] = trimmed.split("-").map(Number);
+      return Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
+    }
+    return [Number(trimmed)];
+  }).filter(n => Number.isInteger(n) && n >= 1 && n <= SLIDE_COUNT);
+}
+
 function setupTabs() {
   $$(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      $$(".tab").forEach(item => item.classList.remove("active"));
-      $$(".tab-panel").forEach(panel => panel.classList.remove("active"));
-      tab.classList.add("active");
-      $("#" + tab.dataset.tab).classList.add("active");
-    });
+    tab.addEventListener("click", () => openTab(tab.dataset.tab));
   });
   $("#toggleTextMode").addEventListener("click", () => {
     const on = document.body.classList.toggle("text-first");
     $("#toggleTextMode").setAttribute("aria-pressed", String(on));
   });
-}
-
-function rollSample() {
-  const max = Number($("#populationSize").value);
-  const n = Math.max(3, Number($("#sampleSize").value));
-  const noise = Number($("#noisePercent").value) / 100;
-  const values = Array.from({ length: n }, () => {
-    const base = 1 + Math.random() * (max - 1);
-    const err = (Math.random() - 0.5) * max * noise;
-    return Math.max(1, Math.min(max, base + err));
+  $("#toggleTranscripts").addEventListener("click", () => {
+    const on = document.body.classList.toggle("hide-transcripts");
+    $("#toggleTranscripts").setAttribute("aria-pressed", String(!on));
+    $("#toggleTranscripts").textContent = on ? "Show transcripts" : "Hide transcripts";
   });
-  const m = mean(values);
-  const s = sd(values);
-  samplingRuns.push({ m, s, n, values });
-  samplingRuns = samplingRuns.slice(-100);
-  $("#sampleStats").innerHTML = `<p><strong>n = ${n}</strong></p><p>Mean = ${fmt(m, 2)}, SD = ${fmt(s, 2)}, RSD = ${fmt(100 * s / m, 2)}%.</p><p>As n increases, the mean stabilizes and SD becomes a more reliable estimate of spread.</p>`;
-  updateSamplingTable();
-  drawSampling();
-  setDecision("sample rolled");
+  $("#openAccessibilityGuide").addEventListener("click", () => $("#accessibilityGuide").hidden = false);
+  $("#closeAccessibilityGuide").addEventListener("click", () => $("#accessibilityGuide").hidden = true);
 }
 
-function updateSamplingTable() {
-  const rows = samplingRuns.slice(-8).map((run, i) => `<tr><td>${samplingRuns.length - Math.min(7, samplingRuns.length - 1) + i}</td><td>${fmt(run.m, 2)}</td><td>${fmt(run.s, 2)}</td><td>${fmt(100 * run.s / run.m, 2)}</td></tr>`).join("");
-  $("#samplingTable tbody").innerHTML = rows;
+function openTab(tabId) {
+  $$(".tab").forEach(item => item.classList.toggle("active", item.dataset.tab === tabId));
+  $$(".tab-panel").forEach(panel => panel.classList.toggle("active", panel.id === tabId));
+  setDecision(tabId);
+}
+
+function renderSlideStrips() {
+  $$(".slide-strip").forEach(strip => {
+    const slides = parseSlideSpec(strip.dataset.slides || "");
+    strip.innerHTML = slides.map(n => {
+      const info = transcript(n);
+      return `
+        <button class="slide-thumb" type="button" data-jump-slide="${n}">
+          <img src="${slideSrc(n)}" alt="Thumbnail of lecture slide ${n}">
+          <span>Slide ${n}: ${escapeHtml(info.title)}</span>
+        </button>
+      `;
+    }).join("");
+  });
+  $$("[data-jump-slide]").forEach(button => {
+    button.addEventListener("click", () => {
+      updateSlide(Number(button.dataset.jumpSlide));
+      openTab("slides");
+    });
+  });
+  $$("[data-open-slides]").forEach(button => {
+    button.addEventListener("click", () => {
+      const [first] = parseSlideSpec(button.dataset.openSlides);
+      updateSlide(first || 1);
+      openTab("slides");
+    });
+  });
+  $$("[data-open-notes]").forEach(button => {
+    button.addEventListener("click", () => {
+      const [first] = parseSlideSpec(button.dataset.openNotes);
+      updateNote(first || 1);
+      openTab("notes");
+    });
+  });
+}
+
+function updateSlide(n) {
+  currentSlide = Math.min(SLIDE_COUNT, Math.max(1, Number(n) || 1));
+  const info = transcript(currentSlide);
+  $("#slideNumber").value = currentSlide;
+  $("#mainSlideImage").src = slideSrc(currentSlide);
+  $("#mainSlideImage").alt = `Lecture slide ${currentSlide}: ${info.title}`;
+  $("#mainSlideTranscript").innerHTML = `<h3>Slide ${currentSlide}: ${escapeHtml(info.title)}</h3><p>${escapeHtml(info.text)}</p>`;
+  setDecision(`slide ${currentSlide}`);
+}
+
+function updateNote(n) {
+  currentNote = Math.min(SLIDE_COUNT, Math.max(1, Number(n) || 1));
+  const info = transcript(currentNote);
+  $("#noteNumber").value = currentNote;
+  $("#mainNoteImage").src = noteSrc(currentNote);
+  $("#mainNoteImage").alt = `Class note page ${currentNote}: ${info.title}`;
+  $("#mainNoteTranscript").innerHTML = `<h3>Note page ${currentNote}: ${escapeHtml(info.title)}</h3><p>${escapeHtml(info.text)}</p>`;
+  setDecision(`note ${currentNote}`);
+}
+
+function setupBrowsers() {
+  $("#prevSlide").addEventListener("click", () => updateSlide(currentSlide - 1));
+  $("#nextSlide").addEventListener("click", () => updateSlide(currentSlide + 1));
+  $("#slideNumber").addEventListener("change", event => updateSlide(event.target.value));
+  $("#prevNote").addEventListener("click", () => updateNote(currentNote - 1));
+  $("#nextNote").addEventListener("click", () => updateNote(currentNote + 1));
+  $("#noteNumber").addEventListener("change", event => updateNote(event.target.value));
+  $("#printSlide").addEventListener("click", () => printMode("print-slide"));
+  $("#printNote").addEventListener("click", () => printMode("print-note"));
+  $("#printPractice").addEventListener("click", () => printMode("print-practice"));
+  updateSlide(1);
+  updateNote(1);
+}
+
+function printMode(className) {
+  document.body.classList.add(className);
+  window.print();
+  window.setTimeout(() => document.body.classList.remove(className), 500);
+}
+
+function renderLectureMap() {
+  $("#lectureMap").innerHTML = lectureCards.map(card => `
+    <button class="lecture-card" type="button" data-open-slides="${card.range}">
+      <strong>Slides ${escapeHtml(card.range)}: ${escapeHtml(card.title)}</strong>
+      <p>${escapeHtml(card.detail)}</p>
+    </button>
+  `).join("");
+  $$("#lectureMap [data-open-slides]").forEach(button => {
+    button.addEventListener("click", () => {
+      const [first] = parseSlideSpec(button.dataset.openSlides);
+      updateSlide(first || 1);
+    });
+  });
+}
+
+function gaussian(meanValue, sdValue) {
+  let u = 0;
+  let v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return meanValue + sdValue * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function runSampling() {
+  const trueMean = Number($("#trueMean").value);
+  const trueSd = Math.max(0.0001, Number($("#trueSd").value));
+  const n = Math.max(2, Number($("#sampleSize").value));
+  const count = Number($("#experimentCount").value);
+  const start = samplingRuns.length;
+  for (let i = 0; i < count; i += 1) {
+    const values = Array.from({ length: n }, () => gaussian(trueMean, trueSd));
+    const m = mean(values);
+    const s = sd(values);
+    const half = tCrit(n - 1, 95) * s / Math.sqrt(n);
+    samplingRuns.push({ run: start + i + 1, m, s, half });
+  }
+  samplingRuns = samplingRuns.slice(-1000);
+  const recent = samplingRuns[samplingRuns.length - 1];
+  $("#sampleStats").className = "result-box success";
+  $("#sampleStats").innerHTML = `<p>Latest experiment: mean = <strong>${fmt(recent.m, 3)}</strong>, s = ${fmt(recent.s, 3)}, 95% CL = +/- ${fmt(recent.half, 3)}.</p><p>Notice how each small experiment gives a different estimate of the true mean and SD.</p>`;
+  drawSampling();
+  renderSamplingTable();
+  setDecision("simulation run");
+}
+
+function clearSampling() {
+  samplingRuns = [];
+  $("#sampleStats").className = "result-box";
+  $("#sampleStats").textContent = "Simulation cleared.";
+  $("#samplingTable tbody").innerHTML = "";
+  drawSampling();
+  setDecision("cleared");
+}
+
+function renderSamplingTable() {
+  $("#samplingTable tbody").innerHTML = samplingRuns.slice(-8).map(run => `
+    <tr><td>${run.run}</td><td>${fmt(run.m, 3)}</td><td>${fmt(run.s, 3)}</td><td>+/- ${fmt(run.half, 3)}</td></tr>
+  `).join("");
 }
 
 function drawSampling() {
   const canvas = $("#samplingCanvas");
   const ctx = canvas.getContext("2d");
-  const w = canvas.width, h = canvas.height;
+  const w = canvas.width;
+  const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = "#d9e1e8";
-  ctx.strokeRect(50, 20, w - 70, h - 60);
+  ctx.strokeStyle = "#d8e0e4";
+  ctx.strokeRect(50, 24, w - 75, h - 70);
+  if (!samplingRuns.length) {
+    $("#samplingSummary").textContent = "Run the simulation to see how finite replicate sets scatter around the population mean.";
+    return;
+  }
   const values = samplingRuns.map(run => run.m);
-  if (!values.length) return;
-  const min = Math.min(...values), max = Math.max(...values);
-  const bins = Array.from({ length: 12 }, () => 0);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const bins = Array.from({ length: 18 }, () => 0);
   values.forEach(value => {
-    const idx = Math.min(11, Math.floor(((value - min) / Math.max(1e-9, max - min)) * 12));
+    const idx = Math.min(bins.length - 1, Math.floor(((value - min) / Math.max(1e-9, max - min)) * bins.length));
     bins[idx] += 1;
   });
   const maxBin = Math.max(...bins);
   bins.forEach((count, i) => {
-    const barW = (w - 90) / bins.length;
-    const barH = (count / maxBin) * (h - 90);
+    const barW = (w - 95) / bins.length;
+    const barH = (count / maxBin) * (h - 105);
     ctx.fillStyle = "#087f8c";
-    ctx.fillRect(55 + i * barW, h - 42 - barH, barW - 4, barH);
+    ctx.fillRect(56 + i * barW, h - 48 - barH, Math.max(2, barW - 4), barH);
   });
-  const m = mean(values);
-  const s = sd(values);
-  $("#samplingSummary").textContent = `${values.length} sample means plotted. Mean of sample means is ${fmt(m, 2)} with SD ${fmt(s, 2)}.`;
+  const avg = mean(values);
+  const spread = sd(values);
+  $("#samplingSummary").textContent = `${values.length} experiment means plotted. Average of means = ${fmt(avg, 3)}; SD of means = ${fmt(spread, 3)}.`;
 }
 
 function calcCi() {
   const values = numbersFrom($("#ciData").value);
   if (values.length < 2) {
-    $("#ciOutput").innerHTML = "<p>Enter at least two measurements.</p>";
+    $("#ciOutput").className = "result-box warning";
+    $("#ciOutput").textContent = "Enter at least two measurements.";
     return;
   }
   const level = Number($("#ciLevel").value);
@@ -193,7 +339,7 @@ function calcCi() {
   const t = tCrit(n - 1, level);
   const half = t * s / Math.sqrt(n);
   $("#ciOutput").className = "result-box success";
-  $("#ciOutput").innerHTML = `<p>Mean = <strong>${fmt(m, 4)}</strong>; s = ${fmt(s, 4)}; df = ${n - 1}; t = ${t}.</p><p>${level}% confidence interval: <strong>${fmt(m - half, 4)} to ${fmt(m + half, 4)}</strong>.</p>`;
+  $("#ciOutput").innerHTML = `<p>Mean = <strong>${fmt(m, 5)}</strong>; s = ${fmt(s, 5)}; N = ${n}; df = ${n - 1}; t = ${fmt(t, 3)}.</p><p>${level}% confidence interval: <strong>${fmt(m - half, 5)} to ${fmt(m + half, 5)}</strong>.</p>`;
   drawCi(m, half);
   setDecision("CI built");
 }
@@ -201,149 +347,345 @@ function calcCi() {
 function drawCi(m, half) {
   const canvas = $("#ciCanvas");
   const ctx = canvas.getContext("2d");
-  const w = canvas.width, h = canvas.height;
+  const w = canvas.width;
+  const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, w, h);
-  const left = 70, right = w - 70, y = h / 2;
-  ctx.strokeStyle = "#18212f";
+  const left = 80;
+  const right = w - 80;
+  const y = h / 2;
+  ctx.strokeStyle = "#172026";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(left, y);
   ctx.lineTo(right, y);
   ctx.stroke();
-  ctx.strokeStyle = "#d39b22";
-  ctx.lineWidth = 10;
+  ctx.strokeStyle = "#c98d17";
+  ctx.lineWidth = 12;
   ctx.beginPath();
-  ctx.moveTo(left + 120, y);
-  ctx.lineTo(right - 120, y);
+  ctx.moveTo(left + 110, y);
+  ctx.lineTo(right - 110, y);
   ctx.stroke();
-  ctx.fillStyle = "#c44762";
+  ctx.fillStyle = "#b74352";
   ctx.beginPath();
-  ctx.arc((left + right) / 2, y, 9, 0, Math.PI * 2);
+  ctx.arc((left + right) / 2, y, 10, 0, Math.PI * 2);
   ctx.fill();
-  $("#ciSummary").textContent = `The interval is centered on ${fmt(m, 4)} and extends plus or minus ${fmt(half, 4)}.`;
+  ctx.fillStyle = "#172026";
+  ctx.font = "18px sans-serif";
+  ctx.fillText(`mean ${fmt(m, 4)}`, (left + right) / 2 - 50, y - 24);
+  $("#ciSummary").textContent = `The interval is centered on ${fmt(m, 5)} and extends +/- ${fmt(half, 5)}.`;
 }
 
-function renderTInputs() {
-  const type = $("#tCase").value;
-  const map = {
-    known: `<label>Data<textarea id="tData" rows="3">3.29, 3.22, 3.30, 3.23</textarea></label><label>Known value<input id="knownValue" type="number" step="0.001" value="3.19"></label>`,
-    two: `<label>Mean 1<input id="mean1" type="number" step="0.001" value="36.14"></label><label>SD 1<input id="s1" type="number" step="0.001" value="0.28"></label><label>n 1<input id="tn1" type="number" value="10"></label><label>Mean 2<input id="mean2" type="number" step="0.001" value="36.20"></label><label>SD 2<input id="s2" type="number" step="0.001" value="0.47"></label><label>n 2<input id="tn2" type="number" value="4"></label>`,
-    paired: `<label>Method 1<textarea id="paired1" rows="3">17.2,23.1,28.5,15.3,23.1,32.5,39.5,38.7,52.5,42.6,52.7</textarea></label><label>Method 2<textarea id="paired2" rows="3">14.2,27.9,21.2,15.9,32.1,22.0,37.0,41.5,42.6,42.8,41.1</textarea></label>`
-  };
-  $("#tInputs").innerHTML = map[type];
-}
-
-function calcT() {
-  const type = $("#tCase").value;
-  let t = 0, df = 1, steps = [];
-  if (type === "known") {
-    const values = numbersFrom($("#tData").value);
-    const known = Number($("#knownValue").value);
-    const m = mean(values), s = sd(values), n = values.length;
-    t = Math.abs(m - known) * Math.sqrt(n) / s;
-    df = n - 1;
-    steps = [`Mean = ${fmt(m, 4)} and s = ${fmt(s, 4)}.`, `Use t = |mean - known| sqrt(n) / s.`, `t calc = ${fmt(t, 3)} with df = ${df}.`];
-  } else if (type === "two") {
-    const m1 = Number($("#mean1").value), m2 = Number($("#mean2").value);
-    const s1 = Number($("#s1").value), s2 = Number($("#s2").value);
-    const n1 = Number($("#tn1").value), n2 = Number($("#tn2").value);
-    const sp = Math.sqrt(((n1 - 1) * s1 ** 2 + (n2 - 1) * s2 ** 2) / (n1 + n2 - 2));
-    t = Math.abs(m1 - m2) / (sp * Math.sqrt(1 / n1 + 1 / n2));
-    df = n1 + n2 - 2;
-    steps = [`Pooled SD = ${fmt(sp, 4)}.`, `Use t = |mean1 - mean2| / (sp sqrt(1/n1 + 1/n2)).`, `t calc = ${fmt(t, 3)} with df = ${df}.`];
-  } else {
-    const a = numbersFrom($("#paired1").value), b = numbersFrom($("#paired2").value);
-    const d = a.map((value, i) => b[i] - value).filter(Number.isFinite);
-    const md = mean(d), sdD = sd(d), n = d.length;
-    t = Math.abs(md) * Math.sqrt(n) / sdD;
-    df = n - 1;
-    steps = [`Differences are Method 2 - Method 1.`, `Mean difference = ${fmt(md, 3)} and SD of differences = ${fmt(sdD, 3)}.`, `t calc = ${fmt(t, 3)} with df = ${df}.`];
+function calcOneT() {
+  const values = numbersFrom($("#oneData").value);
+  const known = Number($("#knownValue").value);
+  const level = Number($("#oneLevel").value);
+  if (values.length < 2 || !Number.isFinite(known)) {
+    $("#oneOutput").className = "result-box warning";
+    $("#oneOutput").textContent = "Enter at least two data values and a known value.";
+    return;
   }
-  const crit = tCrit(df, 95);
-  const significant = t > crit;
-  $("#tOutput").className = `result-box ${significant ? "warn" : "success"}`;
-  $("#tOutput").innerHTML = `<p>t calc = <strong>${fmt(t, 3)}</strong>; t critical at 95% is approximately ${crit}.</p><p><strong>${significant ? "Statistically significant difference." : "No significant difference at 95%."}</strong></p>`;
-  $("#tSteps").innerHTML = steps.map((step, i) => `<div class="coach-step"><span>${i + 1}</span><p>${step}</p></div>`).join("");
-  setDecision(significant ? "significant" : "not significant");
+  const n = values.length;
+  const m = mean(values);
+  const s = sd(values);
+  const t = Math.abs(m - known) * Math.sqrt(n) / s;
+  const crit = tCrit(n - 1, level);
+  const different = t > crit;
+  lastOneSampleDecision = different ? "different" : "consistent";
+  $("#oneOutput").className = `result-box ${different ? "danger" : "success"}`;
+  $("#oneOutput").innerHTML = `<p>t calc = <strong>${fmt(t, 3)}</strong>; t critical = ${fmt(crit, 3)} at ${level}% with df = ${n - 1}.</p><p>${different ? "The difference is statistically significant." : "The data are statistically consistent with the claimed value."}</p>`;
+  $("#oneSteps").innerHTML = [
+    `Mean = ${fmt(m, 4)} and s = ${fmt(s, 4)}.`,
+    "Use t = |mean - known value| sqrt(N) / s.",
+    `${fmt(t, 3)} ${different ? ">" : "<="} ${fmt(crit, 3)}, so the claim is ${different ? "not supported" : "supported"} at this confidence level.`
+  ].map(step => `<p>${escapeHtml(step)}</p>`).join("");
+  setDecision(different ? "different" : "consistent");
+}
+
+function calcTwoT() {
+  const m1 = Number($("#mean1").value);
+  const s1 = Number($("#s1").value);
+  const n1 = Number($("#n1").value);
+  const m2 = Number($("#mean2").value);
+  const s2 = Number($("#s2").value);
+  const n2 = Number($("#n2").value);
+  const level = Number($("#twoLevel").value);
+  const large = Math.max(s1, s2);
+  const small = Math.min(s1, s2);
+  const f = large ** 2 / small ** 2;
+  const sp = Math.sqrt(((n1 - 1) * s1 ** 2 + (n2 - 1) * s2 ** 2) / (n1 + n2 - 2));
+  const t = Math.abs(m1 - m2) / (sp * Math.sqrt(1 / n1 + 1 / n2));
+  const df = n1 + n2 - 2;
+  const crit = tCrit(df, level);
+  const different = t > crit;
+  $("#twoOutput").className = `result-box ${different ? "danger" : "success"}`;
+  $("#twoOutput").innerHTML = `<p>F = ${fmt(f, 3)}. Use the F-test first to decide whether pooling is reasonable.</p><p>Pooled SD = ${fmt(sp, 4)}; t calc = <strong>${fmt(t, 3)}</strong>; t critical = ${fmt(crit, 3)} with df = ${df}.</p><p>${different ? "The two means are significantly different." : "The two means are not significantly different at this confidence level."}</p>`;
+  drawTwoMeans(m1, s1, m2, s2);
+  setDecision(different ? "means differ" : "means similar");
+}
+
+function drawTwoMeans(m1, s1, m2, s2) {
+  const canvas = $("#twoCanvas");
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  const min = Math.min(m1 - 3 * s1, m2 - 3 * s2);
+  const max = Math.max(m1 + 3 * s1, m2 + 3 * s2);
+  const x = value => 60 + ((value - min) / (max - min)) * (w - 120);
+  function curve(m, s, color, yBase) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (let px = 60; px <= w - 60; px += 4) {
+      const value = min + ((px - 60) / (w - 120)) * (max - min);
+      const density = Math.exp(-0.5 * ((value - m) / s) ** 2);
+      const py = yBase - density * 95;
+      if (px === 60) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.fillRect(x(m) - 2, yBase - 110, 4, 116);
+  }
+  curve(m1, s1, "#087f8c", h - 48);
+  curve(m2, s2, "#b74352", h - 48);
+  $("#twoSummary").textContent = `Distribution 1 is centered at ${fmt(m1, 3)}; distribution 2 is centered at ${fmt(m2, 3)}. The wider curve has the larger standard deviation.`;
+}
+
+function calcPaired() {
+  const a = numbersFrom($("#pairedA").value);
+  const b = numbersFrom($("#pairedB").value);
+  const level = Number($("#pairedLevel").value);
+  const n = Math.min(a.length, b.length);
+  if (n < 2) {
+    $("#pairedOutput").className = "result-box warning";
+    $("#pairedOutput").textContent = "Enter at least two matched pairs.";
+    return;
+  }
+  const differences = Array.from({ length: n }, (_, i) => b[i] - a[i]);
+  const md = mean(differences);
+  const sdD = sd(differences);
+  const t = Math.abs(md) * Math.sqrt(n) / sdD;
+  const crit = tCrit(n - 1, level);
+  const different = t > crit;
+  $("#pairedOutput").className = `result-box ${different ? "danger" : "success"}`;
+  $("#pairedOutput").innerHTML = `<p>Mean difference = <strong>${fmt(md, 4)}</strong>; s(d) = ${fmt(sdD, 4)}; t calc = ${fmt(t, 3)}; t critical = ${fmt(crit, 3)}.</p><p>${different ? "The paired measurements show a significant systematic difference." : "The paired measurements do not show a significant systematic difference."}</p>`;
+  $("#pairedTable").innerHTML = `<table class="mini-table"><thead><tr><th>Pair</th><th>A</th><th>B</th><th>B - A</th></tr></thead><tbody>${differences.map((d, i) => `<tr><td>${i + 1}</td><td>${fmt(a[i], 3)}</td><td>${fmt(b[i], 3)}</td><td>${fmt(d, 3)}</td></tr>`).join("")}</tbody></table>`;
+  setDecision(different ? "paired difference" : "paired similar");
 }
 
 function calcF() {
-  const sA = Number($("#sdA").value), sB = Number($("#sdB").value);
-  const nA = Number($("#nA").value), nB = Number($("#nB").value);
-  const high = Math.max(sA, sB), low = Math.min(sA, sB);
-  const f = high ** 2 / low ** 2;
-  const dfNum = high === sA ? nA - 1 : nB - 1;
-  const dfDen = high === sA ? nB - 1 : nA - 1;
-  const key = `${dfNum},${dfDen}`;
-  const crit = fCritical95[key] || "use table";
-  const decision = typeof crit === "number" ? (f > crit ? "variances differ significantly" : "no significant variance difference") : "compare with F table";
-  $("#fOutput").className = `result-box ${decision.startsWith("variances") ? "warn" : "success"}`;
-  $("#fOutput").innerHTML = `<p>Put the larger variance on top. F calc = ${fmt(f, 3)} with df numerator = ${dfNum}, df denominator = ${dfDen}.</p><p>F critical: ${crit}. Decision: <strong>${decision}</strong>.</p>`;
-  setDecision("F test");
+  const sda = Number($("#fSda").value);
+  const sdb = Number($("#fSdb").value);
+  const na = Number($("#fNa").value);
+  const nb = Number($("#fNb").value);
+  const larger = Math.max(sda, sdb);
+  const smaller = Math.min(sda, sdb);
+  const f = larger ** 2 / smaller ** 2;
+  const df1 = sda >= sdb ? na - 1 : nb - 1;
+  const df2 = sda >= sdb ? nb - 1 : na - 1;
+  $("#fOutput").className = "result-box success";
+  $("#fOutput").innerHTML = `<p>F = larger variance / smaller variance = <strong>${fmt(f, 3)}</strong>.</p><p>Degrees of freedom: numerator ${df1}, denominator ${df2}. Use the F table for the final critical comparison; if F is larger than F critical, the precisions are significantly different.</p>`;
+  setDecision("F-test done");
 }
 
 function calcOutlier() {
   const values = numbersFrom($("#outlierData").value).sort((a, b) => a - b);
-  const n = values.length;
-  if (n < 3) return;
   const side = $("#outlierSide").value;
+  if (values.length < 3) {
+    $("#outlierOutput").className = "result-box warning";
+    $("#outlierOutput").textContent = "Enter at least three values.";
+    return;
+  }
+  const n = values.length;
   const suspect = side === "low" ? values[0] : values[n - 1];
-  const neighbor = side === "low" ? values[1] : values[n - 2];
-  const gap = Math.abs(suspect - neighbor);
+  const nearest = side === "low" ? values[1] : values[n - 2];
   const range = values[n - 1] - values[0];
-  const q = gap / range;
-  const m = mean(values), s = sd(values);
+  const q = Math.abs(nearest - suspect) / range;
+  const m = mean(values);
+  const s = sd(values);
   const g = Math.abs(suspect - m) / s;
-  const qCrit = qCritical95[n] || "table";
-  const gCrit = grubbsCritical95[n] || "table";
-  $("#outlierOutput").innerHTML = `<p>Suspected value = ${suspect}. Q calc = ${fmt(q, 3)}; Q critical = ${qCrit}.</p><p>Grubbs G calc = ${fmt(g, 3)}; G critical = ${gCrit}.</p><p>Only remove a point if the statistical test and experimental context justify it.</p>`;
-  setDecision("outlier checked");
+  const qReject = q > qCrit(n);
+  const gReject = g > grubbsCrit(n);
+  $("#outlierOutput").className = `result-box ${qReject || gReject ? "danger" : "success"}`;
+  $("#outlierOutput").innerHTML = `<p>Suspected value: <strong>${fmt(suspect, 5)}</strong>.</p><p>Q calc = ${fmt(q, 3)}; Q critical = ${fmt(qCrit(n), 3)}. ${qReject ? "Q-test supports rejection." : "Q-test does not support rejection."}</p><p>Grubbs G = ${fmt(g, 3)}; G critical = ${fmt(grubbsCrit(n), 3)}. ${gReject ? "Grubbs test supports rejection." : "Grubbs test does not support rejection."}</p>`;
+  setDecision(qReject || gReject ? "outlier flagged" : "keep data");
 }
 
-function renderPracticeCards() {
-  $("#practiceCards").innerHTML = practiceCards.map((item, i) => `
-    <article class="provided-question-card">
-      <div class="question-card-head">
-        <div>
-          <span class="question-number">Question ${i + 1}</span>
-          <p class="question-section">${item.section}</p>
-        </div>
-        <button class="ghost" type="button" data-key="${i}" aria-expanded="false">Reveal key</button>
-      </div>
-      <p>${item.prompt}</p>
-      <div class="question-key" id="practice-key-${i}" hidden><h4>Key</h4><p>${item.key}</p></div>
-    </article>
-  `).join("");
-  $$("[data-key]").forEach(button => {
+function calcTail() {
+  const question = $("#tailQuestion").value;
+  const t = Math.abs(Number($("#tailT").value));
+  const df = Number($("#tailDf").value);
+  const twoCrit = tCrit(df, 95);
+  const oneCrit = tCrit(df, 90);
+  const oneTail = question !== "different";
+  const crit = oneTail ? oneCrit : twoCrit;
+  const significant = t > crit;
+  drawTail(oneTail, t, crit);
+  $("#tailOutput").className = `result-box ${significant ? "danger" : "success"}`;
+  $("#tailOutput").innerHTML = `<p>${oneTail ? "Use a one-tailed test because the question is directional." : "Use a two-tailed test because the question asks whether the result is different in either direction."}</p><p>t calc = ${fmt(t, 3)}; approximate critical value = ${fmt(crit, 3)}. ${significant ? "Reject the null hypothesis." : "Do not reject the null hypothesis."}</p>`;
+  setDecision(oneTail ? "one-tailed" : "two-tailed");
+}
+
+function drawTail(oneTail, t, crit) {
+  const canvas = $("#tailCanvas");
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  const yBase = h - 55;
+  const center = w / 2;
+  const scale = 85;
+  ctx.strokeStyle = "#172026";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let px = 80; px <= w - 80; px += 3) {
+    const xVal = (px - center) / scale;
+    const y = yBase - Math.exp(-0.5 * xVal * xVal) * 160;
+    if (px === 80) ctx.moveTo(px, y);
+    else ctx.lineTo(px, y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = "rgba(183,67,82,0.28)";
+  if (oneTail) {
+    ctx.fillRect(center + crit * scale, 50, w - (center + crit * scale) - 80, yBase - 50);
+  } else {
+    ctx.fillRect(80, 50, center - crit * scale - 80, yBase - 50);
+    ctx.fillRect(center + crit * scale, 50, w - (center + crit * scale) - 80, yBase - 50);
+  }
+  ctx.fillStyle = "#087f8c";
+  ctx.fillRect(center + t * scale - 2, 45, 4, yBase);
+}
+
+function setupChecks() {
+  $$(".check-btn").forEach(button => {
     button.addEventListener("click", () => {
-      const key = $("#practice-key-" + button.dataset.key);
-      const show = key.hidden;
-      key.hidden = !show;
-      button.textContent = show ? "Hide key" : "Reveal key";
-      button.setAttribute("aria-expanded", String(show));
+      if (button.dataset.check === "oneSample") {
+        const feedback = $("#oneCheckFeedback");
+        if (!lastOneSampleDecision) {
+          feedback.className = "result-box warning";
+          feedback.textContent = "Run the one-sample t test first, then make the interpretation choice.";
+          return;
+        }
+        const correct = button.dataset.answer === lastOneSampleDecision;
+        feedback.className = `result-box ${correct ? "success" : "warning"}`;
+        feedback.textContent = correct ? "Correct. Your interpretation matches the t comparison." : "Try again. Compare t calculated with t critical and remember that smaller t means the difference can be explained by random variation.";
+      }
     });
   });
 }
 
-function renderLectureMap() {
-  $("#lectureMap").innerHTML = lectureCards.map(([slides, text]) => `<article class="lecture-card"><h3>${slides}</h3><p>${text}</p></article>`).join("");
+function renderPracticeFilters() {
+  const cards = window.practiceSetOne || [];
+  const topics = ["Statistics focus", "All topics", ...new Set(cards.map(card => card.topic))];
+  $("#practiceTopic").innerHTML = topics.map(topic => `<option value="${escapeHtml(topic)}">${escapeHtml(topic)}</option>`).join("");
+  $("#practiceTopic").value = "Statistics focus";
+  $("#practiceTopic").addEventListener("change", renderPracticeCards);
+  $("#practiceSearch").addEventListener("input", renderPracticeCards);
+  $("#collapseKeys").addEventListener("click", () => {
+    $$(".key-text").forEach(key => key.hidden = true);
+    $$(".reveal-key").forEach(button => button.textContent = "Reveal key");
+  });
+  renderPracticeCards();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupTabs();
-  renderTInputs();
-  $("#tCase").addEventListener("change", renderTInputs);
-  $("#rollOnce").addEventListener("click", rollSample);
-  $("#rollMany").addEventListener("click", () => { for (let i = 0; i < 100; i++) rollSample(); });
+function renderPracticeCards() {
+  const cards = window.practiceSetOne || [];
+  const topic = $("#practiceTopic").value;
+  const term = $("#practiceSearch").value.trim().toLowerCase();
+  const filtered = cards.filter(card => {
+    const topicOk = topic === "All topics" || (topic === "Statistics focus" ? card.number >= 33 && card.number <= 49 : card.topic === topic);
+    const text = `${card.number} ${card.topic} ${card.prompt} ${card.key}`.toLowerCase();
+    return topicOk && (!term || text.includes(term));
+  });
+  $("#practiceCards").innerHTML = filtered.map(card => `
+    <article class="practice-card">
+      <header>
+        <div>
+          <h3>Question ${card.number}</h3>
+          <span class="badge">${escapeHtml(card.topic)}</span>
+        </div>
+        <button class="ghost reveal-key" type="button" data-key="${card.number}">Reveal key</button>
+      </header>
+      <p class="question-text">${escapeHtml(card.prompt)}</p>
+      <div class="key-text" id="key-${card.number}" hidden>${escapeHtml(card.key)}</div>
+    </article>
+  `).join("");
+  $$(".reveal-key").forEach(button => {
+    button.addEventListener("click", () => {
+      const key = $(`#key-${button.dataset.key}`);
+      key.hidden = !key.hidden;
+      button.textContent = key.hidden ? "Reveal key" : "Hide key";
+    });
+  });
+  setDecision(`${filtered.length} cards`);
+}
+
+function setupExamples() {
+  $$("[data-load-example]").forEach(button => {
+    button.addEventListener("click", () => {
+      const example = button.dataset.loadExample;
+      if (example === "caffeine") {
+        $("#oneData").value = "98.5, 100.1, 99.7, 101.0, 99.9";
+        $("#knownValue").value = "100.0";
+        calcOneT();
+      }
+      if (example === "twoMeans") {
+        $("#mean1").value = "36.14";
+        $("#s1").value = "0.28";
+        $("#n1").value = "10";
+        $("#mean2").value = "36.20";
+        $("#s2").value = "0.47";
+        $("#n2").value = "4";
+        calcTwoT();
+      }
+      if (example === "paired") {
+        $("#pairedA").value = "95.2, 108.5, 122.3, 87.6, 134.2, 101.7, 115.8";
+        $("#pairedB").value = "96.1, 109.8, 123.1, 88.9, 135.5, 102.3, 116.4";
+        calcPaired();
+      }
+      if (example === "outlier") {
+        $("#outlierData").value = "2.31017, 2.30986, 2.31010, 2.31001, 2.31024, 2.31010, 2.31028, 2.29889";
+        $("#outlierSide").value = "low";
+        calcOutlier();
+      }
+    });
+  });
+}
+
+function setupCalculators() {
+  $("#runSampling").addEventListener("click", runSampling);
+  $("#clearSampling").addEventListener("click", clearSampling);
   $("#calcCi").addEventListener("click", calcCi);
-  $("#calcT").addEventListener("click", calcT);
+  $("#calcOneT").addEventListener("click", calcOneT);
+  $("#calcTwoT").addEventListener("click", calcTwoT);
+  $("#calcPaired").addEventListener("click", calcPaired);
   $("#calcF").addEventListener("click", calcF);
   $("#calcOutlier").addEventListener("click", calcOutlier);
-  renderPracticeCards();
+  $("#calcTail").addEventListener("click", calcTail);
+}
+
+function init() {
+  setupTabs();
+  renderSlideStrips();
   renderLectureMap();
+  setupBrowsers();
+  setupCalculators();
+  setupExamples();
+  setupChecks();
+  renderPracticeFilters();
+  drawSampling();
   calcCi();
-  calcT();
-  calcF();
-});
+  calcOneT();
+  calcTwoT();
+  calcPaired();
+  calcTail();
+}
+
+document.addEventListener("DOMContentLoaded", init);
